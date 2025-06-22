@@ -1,0 +1,17 @@
+import os
+
+# Telegram Bot Configuration
+TELEGRAM_BOT_TOKEN = "7584365669:AAHWBe6nMWVsz4o_0kmAeq_iuNNjOpCJGb8"
+TELEGRAM_CHAT_ID = "6635106948"
+
+# Camera Configuration
+CAMERA_INDEX = 0  # 0 for default camera
+MOTION_THRESHOLD = 5000  # Threshold for motion detection
+CONTOUR_MIN_AREA = 500   # Minimum area for valid contour
+
+# File paths
+LOG_FILE = "intrusion_log.csv"
+ALERT_IMAGES_DIR = "alert_images"
+
+# Create directories if they don't exist
+os.makedirs(ALERT_IMAGES_DIR, exist_ok=True)
