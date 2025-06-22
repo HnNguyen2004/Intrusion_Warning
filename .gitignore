@@ -1,0 +1,34 @@
+# Environment variables (chứa thông tin nhạy cảm)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Logs
+*.log
+system.log
+
+# Alert images (có thể chứa thông tin riêng tư)
+alert_images/
+
+# CSV logs
+intrusion_log.csv
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Virtual environment
+venv/
+env/
+.venv/

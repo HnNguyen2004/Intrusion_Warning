@@ -1,8 +1,12 @@
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Telegram Bot Configuration
-TELEGRAM_BOT_TOKEN = "7584365669:AAHWBe6nMWVsz4o_0kmAeq_iuNNjOpCJGb8"
-TELEGRAM_CHAT_ID = "6635106948"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Camera Configuration
 CAMERA_INDEX = 0  # 0 for default camera

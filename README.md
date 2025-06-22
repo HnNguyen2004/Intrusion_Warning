@@ -27,16 +27,29 @@ pip install -r requirements.txt
 4. Lưu **Bot Token** được cung cấp
 
 #### Lấy Chat ID:
-1. Nhắn tin bất kỳ cho bot vừa tạo
-2. Truy cập: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
-3. Tìm `"chat":{"id":XXXXXXX}` và lưu **Chat ID**
+```bash
+# Cách 1: Sử dụng script có sẵn
+python get_chat_id.py
+
+# Cách 2: Thủ công
+# 1. Nhắn tin bất kỳ cho bot vừa tạo
+# 2. Truy cập: https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+# 3. Tìm "chat":{"id":XXXXXXX} và lưu Chat ID
+```
 
 #### Cập nhật cấu hình:
-Mở file `config.py` và thay đổi:
-```python
-TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"  # Thay bằng Bot Token
-TELEGRAM_CHAT_ID = "YOUR_CHAT_ID_HERE"      # Thay bằng Chat ID
+1. Sao chép file `.env.example` thành `.env`:
+```bash
+copy .env.example .env
 ```
+
+2. Chỉnh sửa file `.env`:
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
+```
+
+**⚠️ LƯU Ý**: File `.env` chứa thông tin nhạy cảm và sẽ không được đưa lên Git.
 
 ## 🎯 Sử dụng
 
