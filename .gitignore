@@ -13,7 +13,9 @@ __pycache__/
 system.log
 
 # Alert images (có thể chứa thông tin riêng tư)
-alert_images/
+alert_images/*.jpg
+alert_images/*.png
+alert_images/*.jpeg
 
 # CSV logs
 intrusion_log.csv
