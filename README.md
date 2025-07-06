@@ -80,20 +80,36 @@ python main_with_remote.py
 
 ```
 Intrusion_Warning/
-├── main_with_remote.py    # 🚀 FILE CHÍNH - Chạy file này
-├── config.py              # ⚙️ Cấu hình hệ thống
-├── intrusion_detector.py  # 👁️ Module phát hiện xâm nhập
-├── telegram_handler.py    # 📱 Module xử lý Telegram
-├── logger.py              # 📝 Module ghi log
-├── remote_control.py      # 🎮 Module điều khiển từ xa
-├── requirements.txt       # 📦 Dependencies
-├── .env                   # 🔐 Cấu hình bảo mật (token, chat ID)
-├── .env.example           # 📋 Template cấu hình
-├── README.md              # 📖 Hướng dẫn này
-├── alert_images/          # 📷 Thư mục lưu ảnh cảnh báo
-├── intrusion_log.csv      # 📊 File log CSV (tự động tạo)
-└── test_telegram.py       # 🔧 Script test kết nối Telegram
+├── 🚀 CORE SYSTEM
+│   ├── main_with_remote.py           # � MAIN FILE - Hệ thống chính
+│   ├── config.py                     # ⚙️ Cấu hình hệ thống  
+│   ├── intrusion_detector.py         # 👁️ Module phát hiện xâm nhập
+│   ├── telegram_handler.py           # 📱 Module xử lý Telegram
+│   ├── logger.py                     # 📝 Module ghi log
+│   └── remote_control.py             # 🎮 Module điều khiển từ xa
+│
+├── 🌐 WEB SYSTEM
+│   ├── web_api.py                    # 🔗 Flask API backend
+│   └── web_frontend/index.html       # �️ Vue.js frontend
+│
+├── 🚀 STARTUP SCRIPTS  
+│   ├── start_complete_system.bat     # 🔥 MAIN STARTUP
+│   ├── start_main_system.bat         # � Main system only
+│   └── start_web_dashboard.bat       # 🌐 Web dashboard only
+│
+├── 🔐 CONFIG & DATA
+│   ├── .env                          # � Environment variables  
+│   ├── requirements.txt              # � Dependencies
+│   ├── alert_images/                 # 📷 Ảnh cảnh báo (auto-generated)
+│   └── intrusion_log.csv             # 📊 Log CSV (auto-generated)
+│
+└── 📖 DOCUMENTATION
+    ├── README.md                     # 📖 Hướng dẫn chính (file này)
+    ├── PROJECT_STRUCTURE.md          # 📁 Chi tiết cấu trúc dự án
+    └── docs/                         # � Tài liệu chi tiết
 ```
+
+> 📋 **Chi tiết đầy đủ**: Xem `PROJECT_STRUCTURE.md`
 
 ## ⚙️ Cấu hình
 
@@ -193,10 +209,53 @@ Mọi đóng góp đều được chào đón! Hãy tạo issue hoặc pull requ
 
 ## 🚀 Cách sử dụng nhanh
 
-1. **Cài đặt**: `pip install -r requirements.txt`
-2. **Cấu hình**: Copy `.env.example` → `.env` và điền token/chat ID
-3. **Chạy**: `python main_with_remote.py`
-4. **Test**: Nhấn `m` để test hoặc gửi `/chup` qua Telegram
-5. **Tùy chỉnh**: Điều chỉnh ngưỡng trong `config.py` nếu cần
+### 🔥 **Phương pháp 1: Chạy hệ thống hoàn chỉnh (Khuyến nghị)**
+```cmd
+# Chạy cả Main System + Web Dashboard cùng lúc
+start_complete_system.bat
+```
+**Kết quả:**
+- 📹 **Window 1**: Main system (camera + Telegram)
+- 🌐 **Window 2**: Web dashboard (http://localhost:5000/web)
+- 🌐 **Browser**: Tự động mở giao diện web
 
-**Lưu ý**: Đây là hệ thống hoàn chỉnh và ổn định. File chính để chạy là `main_with_remote.py`.
+### 🔧 **Phương pháp 2: Chạy riêng từng hệ thống**
+
+**Hệ thống chính:**
+```cmd
+start_main_system.bat
+# HOẶC: python main_with_remote.py
+```
+
+**Web dashboard (chạy trong terminal khác):**
+```cmd
+start_web_dashboard.bat  
+# HOẶC: python web_api.py
+```
+
+### 🎯 **Workflow đầy đủ:**
+
+1. **🚀 Khởi động**: `start_complete_system.bat`
+2. **📹 Kiểm tra**: Main system window hiển thị camera
+3. **🌐 Truy cập**: http://localhost:5000/web
+4. **📱 Test**: Gửi `/chup` qua Telegram hoặc nhấn `m`
+5. **📊 Giám sát**: Theo dõi qua web dashboard
+
+### 📱 **Điều khiển từ xa qua Telegram:**
+- `/chup` - Chụp ảnh từ xa
+- `/mo` - Bật camera giám sát  
+- `/thoat` - Tắt camera giám sát
+
+### 🎮 **Điều khiển trực tiếp:**
+- `q` - Thoát chương trình
+- `s` - Chụp ảnh thủ công  
+- `r` - Reset background
+- `m` - Test phát hiện
+
+### 🌐 **Web Dashboard:**
+- **Dashboard**: Thống kê tổng quan
+- **Events**: Danh sách sự kiện phát hiện
+- **Images**: Thư viện ảnh cảnh báo
+- **Stats**: Biểu đồ phân tích
+
+**Lưu ý**: Hệ thống hoàn chỉnh và ổn định. Main file để chạy là `start_complete_system.bat`.

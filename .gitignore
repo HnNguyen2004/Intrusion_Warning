@@ -1,36 +1,89 @@
-# Environment variables (chứa thông tin nhạy cảm)
+# ========================================
+# INTRUSION WARNING SYSTEM - .gitignore
+# ========================================
+
+# Environment variables (chứa Bot Token, Chat ID nhạy cảm)
 .env
 
-# Python cache
+# Python cache và compiled files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.pyz
 .Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
 
-# Logs
+# Logs và system files
 *.log
 system.log
+debug.log
 
-# Alert images (có thể chứa thông tin riêng tư)
+# Alert images (có thể chứa ảnh riêng tư)
 alert_images/*.jpg
 alert_images/*.png
 alert_images/*.jpeg
+alert_images/*.bmp
+alert_images/*.tiff
+# Giữ lại .gitkeep để maintain folder structure
+!alert_images/.gitkeep
 
-# CSV logs
+# CSV logs (chứa dữ liệu phát hiện)
 intrusion_log.csv
+*.csv
 
-# IDE files
+# IDE và Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-*
+.vimrc
 
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Virtual environment
 venv/
 env/
 .venv/
+.env/
+conda_env/
+
+# Flask web cache
+web_frontend/dist/
+web_frontend/node_modules/
+*.pid
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Test files và development
+test_*.py
+debug_*.py
+temp_*.py
+
+# Documentation builds
+docs/_build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏠 Intrusion Warning System</title>
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .event-card {
+      transition: all 0.3s ease;
+    }
+    .event-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .image-thumbnail {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .image-thumbnail:hover {
+      transform: scale(1.05);
+    }
+    .stats-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .alert-card {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    .success-card {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <v-app>
+      <!-- Navigation Bar -->
+      <v-app-bar color="primary" dark>
+        <v-icon class="mr-3">mdi-security</v-icon>
+        <v-toolbar-title>🏠 Intrusion Warning System</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-chip 
+          :color="systemStatus.is_running ? 'success' : 'error'" 
+          :prepend-icon="systemStatus.is_running ? 'mdi-check-circle' : 'mdi-alert-circle'"
+          variant="flat"
+        >
+          {{ systemStatus.is_running ? 'Đang hoạt động' : 'Không hoạt động' }}
+        </v-chip>
+        <v-btn icon @click="refreshData">
+          <v-icon>mdi-refresh</v-icon>
+        </v-btn>
+      </v-app-bar>
+
+      <!-- Main Content -->
+      <v-main>
+        <v-container fluid>
+          
+          <!-- Loading -->
+          <v-row v-if="loading" justify="center">
+            <v-col cols="12" class="text-center">
+              <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
+              <div class="mt-3">Đang tải dữ liệu...</div>
+            </v-col>
+          </v-row>
+
+          <!-- Dashboard Stats -->
+          <v-row v-if="!loading">
+            <v-col cols="12" md="3">
+              <v-card class="stats-card">
+                <v-card-text>
+                  <div class="d-flex align-center">
+                    <v-icon size="40" class="mr-3">mdi-chart-line</v-icon>
+                    <div>
+                      <div class="text-h4 font-weight-bold">{{ stats.total_events }}</div>
+                      <div class="text-subtitle1">Tổng sự kiện</div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            
+            <v-col cols="12" md="3">
+              <v-card class="alert-card">
+                <v-card-text>
+                  <div class="d-flex align-center">
+                    <v-icon size="40" class="mr-3">mdi-bell-alert</v-icon>
+                    <div>
+                      <div class="text-h4 font-weight-bold">{{ stats.today_events }}</div>
+                      <div class="text-subtitle1">Hôm nay</div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            
+            <v-col cols="12" md="3">
+              <v-card class="success-card">
+                <v-card-text>
+                  <div class="d-flex align-center">
+                    <v-icon size="40" class="mr-3">mdi-camera</v-icon>
+                    <div>
+                      <div class="text-h4 font-weight-bold">{{ images.length }}</div>
+                      <div class="text-subtitle1">Ảnh cảnh báo</div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+            
+            <v-col cols="12" md="3">
+              <v-card color="teal">
+                <v-card-text class="text-white">
+                  <div class="d-flex align-center">
+                    <v-icon size="40" class="mr-3">mdi-check-circle</v-icon>
+                    <div>
+                      <div class="text-h4 font-weight-bold">{{ stats.alert_success_rate }}%</div>
+                      <div class="text-subtitle1">Tỷ lệ gửi thành công</div>
+                    </div>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <!-- Tabs -->
+          <v-row v-if="!loading">
+            <v-col cols="12">
+              <v-tabs v-model="currentTab" color="primary">
+                <v-tab value="events">
+                  <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
+                  Sự kiện
+                </v-tab>
+                <v-tab value="images">
+                  <v-icon class="mr-2">mdi-image-multiple</v-icon>
+                  Ảnh cảnh báo
+                </v-tab>
+                <v-tab value="stats">
+                  <v-icon class="mr-2">mdi-chart-areaspline</v-icon>
+                  Thống kê
+                </v-tab>
+              </v-tabs>
+            </v-col>
+          </v-row>
+
+          <!-- Tab Content -->
+          <v-row v-if="!loading">
+            <v-col cols="12">
+              <v-tabs-window v-model="currentTab">
+                
+                <!-- Events Tab -->
+                <v-tabs-window-item value="events">
+                  <v-card>
+                    <v-card-title>
+                      📋 Danh sách sự kiện gần đây
+                      <v-spacer></v-spacer>
+                      <v-chip color="primary">{{ events.length }} sự kiện</v-chip>
+                    </v-card-title>
+                    
+                    <v-card-text>
+                      <v-row>
+                        <v-col 
+                          v-for="(event, index) in events" 
+                          :key="index"
+                          cols="12" md="6" lg="4"
+                        >
+                          <v-card class="event-card" elevation="2">
+                            <v-card-title class="text-subtitle1">
+                              🚨 {{ event.detection_type }}
+                              <v-spacer></v-spacer>
+                              <v-chip 
+                                :color="event.alert_sent ? 'success' : 'warning'" 
+                                size="small"
+                              >
+                                {{ event.alert_sent ? 'Đã gửi' : 'Chưa gửi' }}
+                              </v-chip>
+                            </v-card-title>
+                            
+                            <v-card-text>
+                              <div class="mb-2">
+                                <v-icon size="small" class="mr-1">mdi-clock</v-icon>
+                                {{ formatDateTime(event.timestamp) }}
+                              </div>
+                              <div class="mb-2">
+                                <v-icon size="small" class="mr-1">mdi-percent</v-icon>
+                                Độ tin cậy: {{ (event.confidence * 100).toFixed(1) }}%
+                              </div>
+                              <div v-if="event.image_path">
+                                <v-icon size="small" class="mr-1">mdi-image</v-icon>
+                                {{ event.image_path.split('/').pop() }}
+                              </div>
+                            </v-card-text>
+                            
+                            <v-card-actions v-if="event.image_path">
+                              <v-btn 
+                                color="primary" 
+                                variant="text"
+                                @click="showImageDialog(event.image_path)"
+                              >
+                                <v-icon class="mr-1">mdi-eye</v-icon>
+                                Xem ảnh
+                              </v-btn>
+                            </v-card-actions>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                      
+                      <div v-if="events.length === 0" class="text-center py-8">
+                        <v-icon size="64" color="grey-lighten-1">mdi-inbox</v-icon>
+                        <div class="text-h6 mt-2">Chưa có sự kiện nào</div>
+                        <div class="text-body-2">Hệ thống sẽ ghi lại các sự kiện phát hiện xâm nhập</div>
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-tabs-window-item>
+
+                <!-- Images Tab -->
+                <v-tabs-window-item value="images">
+                  <v-card>
+                    <v-card-title>
+                      📷 Thư viện ảnh cảnh báo
+                      <v-spacer></v-spacer>
+                      <v-chip color="primary">{{ images.length }} ảnh</v-chip>
+                    </v-card-title>
+                    
+                    <v-card-text>
+                      <v-row>
+                        <v-col 
+                          v-for="(image, index) in images" 
+                          :key="index"
+                          cols="12" sm="6" md="4" lg="3"
+                        >
+                          <v-card>
+                            <v-img
+                              :src="getImageThumbnailUrl(image.filename)"
+                              height="200"
+                              cover
+                              class="image-thumbnail"
+                              @click="showImageDialog(image.filename)"
+                            >
+                              <template v-slot:placeholder>
+                                <div class="d-flex align-center justify-center fill-height">
+                                  <v-progress-circular indeterminate></v-progress-circular>
+                                </div>
+                              </template>
+                            </v-img>
+                            
+                            <v-card-subtitle class="py-2">
+                              <div class="text-caption">{{ image.filename }}</div>
+                              <div class="text-caption text-grey">{{ image.created }}</div>
+                            </v-card-subtitle>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+                      
+                      <div v-if="images.length === 0" class="text-center py-8">
+                        <v-icon size="64" color="grey-lighten-1">mdi-camera-off</v-icon>
+                        <div class="text-h6 mt-2">Chưa có ảnh nào</div>
+                        <div class="text-body-2">Ảnh cảnh báo sẽ xuất hiện khi có phát hiện xâm nhập</div>
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-tabs-window-item>
+
+                <!-- Stats Tab -->
+                <v-tabs-window-item value="stats">
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-card>
+                        <v-card-title>📊 Thống kê theo ngày (7 ngày qua)</v-card-title>
+                        <v-card-text>
+                          <canvas id="weekChart" width="400" height="200"></canvas>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                    
+                    <v-col cols="12" md="6">
+                      <v-card>
+                        <v-card-title>🕐 Thống kê theo giờ (24h)</v-card-title>
+                        <v-card-text>
+                          <canvas id="hourChart" width="400" height="200"></canvas>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+                  </v-row>
+                </v-tabs-window-item>
+
+              </v-tabs-window>
+            </v-col>
+          </v-row>
+
+        </v-container>
+      </v-main>
+
+      <!-- Image Dialog -->
+      <v-dialog v-model="imageDialog" max-width="800">
+        <v-card>
+          <v-card-title>
+            <span>📷 Ảnh cảnh báo</span>
+            <v-spacer></v-spacer>
+            <v-btn icon @click="imageDialog = false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-card-title>
+          
+          <v-card-text>
+            <v-img
+              v-if="selectedImage"
+              :src="getImageUrl(selectedImage)"
+              max-height="500"
+              contain
+            ></v-img>
+          </v-card-text>
+          
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="downloadImage">
+              <v-icon class="mr-1">mdi-download</v-icon>
+              Tải về
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Snackbar -->
+      <v-snackbar v-model="snackbar.show" :color="snackbar.color">
+        {{ snackbar.message }}
+        <template v-slot:actions>
+          <v-btn variant="text" @click="snackbar.show = false">Đóng</v-btn>
+        </template>
+      </v-snackbar>
+
+    </v-app>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const { createVuetify } = Vuetify;
+
+    const vuetify = createVuetify({
+      theme: {
+        defaultTheme: 'light'
+      }
+    });
+
+    createApp({
+      data() {
+        return {
+          loading: true,
+          currentTab: 'events',
+          events: [],
+          images: [],
+          stats: {},
+          systemStatus: {},
+          imageDialog: false,
+          selectedImage: null,
+          snackbar: {
+            show: false,
+            message: '',
+            color: 'success'
+          },
+          apiBaseUrl: 'http://localhost:5000/api'
+        }
+      },
+      
+      async mounted() {
+        await this.loadData();
+        this.startAutoRefresh();
+      },
+      
+      methods: {
+        async loadData() {
+          this.loading = true;
+          try {
+            await Promise.all([
+              this.loadEvents(),
+              this.loadImages(),
+              this.loadStats(),
+              this.loadSystemStatus()
+            ]);
+            
+            // Render charts sau khi load xong stats
+            this.$nextTick(() => {
+              this.renderCharts();
+            });
+            
+          } catch (error) {
+            console.error('Error loading data:', error);
+            this.showSnackbar('Lỗi tải dữ liệu: ' + error.message, 'error');
+          } finally {
+            this.loading = false;
+          }
+        },
+        
+        async loadEvents() {
+          const response = await axios.get(`${this.apiBaseUrl}/events`);
+          this.events = response.data.data;
+        },
+        
+        async loadImages() {
+          const response = await axios.get(`${this.apiBaseUrl}/images`);
+          this.images = response.data.data;
+        },
+        
+        async loadStats() {
+          const response = await axios.get(`${this.apiBaseUrl}/stats`);
+          this.stats = response.data.data;
+        },
+        
+        async loadSystemStatus() {
+          const response = await axios.get(`${this.apiBaseUrl}/system/status`);
+          this.systemStatus = response.data.data;
+        },
+        
+        async refreshData() {
+          await this.loadData();
+          this.showSnackbar('Đã cập nhật dữ liệu');
+        },
+        
+        startAutoRefresh() {
+          // Tự động refresh mỗi 30 giây
+          setInterval(async () => {
+            await this.loadSystemStatus();
+            if (this.currentTab === 'events') {
+              await this.loadEvents();
+            }
+          }, 30000);
+        },
+        
+        showImageDialog(imagePath) {
+          this.selectedImage = imagePath.split('/').pop();
+          this.imageDialog = true;
+        },
+        
+        getImageUrl(filename) {
+          return `${this.apiBaseUrl}/images/${filename}`;
+        },
+        
+        getImageThumbnailUrl(filename) {
+          return `${this.apiBaseUrl}/images/${filename}/thumbnail`;
+        },
+        
+        downloadImage() {
+          if (this.selectedImage) {
+            const link = document.createElement('a');
+            link.href = this.getImageUrl(this.selectedImage);
+            link.download = this.selectedImage;
+            link.click();
+          }
+        },
+        
+        formatDateTime(timestamp) {
+          return new Date(timestamp).toLocaleString('vi-VN');
+        },
+        
+        showSnackbar(message, color = 'success') {
+          this.snackbar.message = message;
+          this.snackbar.color = color;
+          this.snackbar.show = true;
+        },
+        
+        renderCharts() {
+          // Chart theo tuần
+          if (this.stats.week_stats) {
+            const weekCtx = document.getElementById('weekChart');
+            if (weekCtx) {
+              new Chart(weekCtx, {
+                type: 'line',
+                data: {
+                  labels: Object.keys(this.stats.week_stats).reverse(),
+                  datasets: [{
+                    label: 'Số sự kiện',
+                    data: Object.values(this.stats.week_stats).reverse(),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  scales: {
+                    y: {
+                      beginAtZero: true
+                    }
+                  }
+                }
+              });
+            }
+          }
+          
+          // Chart theo giờ
+          if (this.stats.hour_stats) {
+            const hourCtx = document.getElementById('hourChart');
+            if (hourCtx) {
+              new Chart(hourCtx, {
+                type: 'bar',
+                data: {
+                  labels: Object.keys(this.stats.hour_stats),
+                  datasets: [{
+                    label: 'Số sự kiện',
+                    data: Object.values(this.stats.hour_stats),
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  scales: {
+                    y: {
+                      beginAtZero: true
+                    }
+                  }
+                }
+              });
+            }
+          }
+        }
+      }
+    }).use(vuetify).mount('#app');
+  </script>
+</body>
+</html>
