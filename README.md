@@ -1,15 +1,16 @@
 # 🏠 Intrusion Warning System
 
-Hệ thống cảnh báo xâm nhập thông minh sử dụng camera để phát hiện chuyển động và gửi cảnh báo qua Telegram.
+Hệ thống cảnh báo xâm nhập thông minh sử dụng camera để phát hiện chuyển động và gửi cảnh báo qua Telegram với khả năng điều khiển từ xa.
 
 ## ✨ Tính năng
 
-- 📹 **Phát hiện chuyển động** qua camera real-time
-- 🚨 **Gửi cảnh báo Telegram** ngay lập tức kèm ảnh
-- 📊 **Ghi log** lịch sử phát hiện vào file CSV
-- 🎮 **Giao diện giám sát** trực quan
-- ⚙️ **Cấu hình linh hoạt** và dễ mở rộng
-- 🔒 **Chống spam** với thời gian cooldown
+- 📹 **Phát hiện chuyển động** qua camera real-time với ngưỡng tùy chỉnh
+- 🚨 **Gửi cảnh báo Telegram** ngay lập tức kèm ảnh không có box phát hiện
+- � **Điều khiển từ xa** qua Telegram với các lệnh `/chup`, `/mo`, `/thoat`
+- �📊 **Ghi log** lịch sử phát hiện vào file CSV tự động
+- 🎮 **Giao diện giám sát** trực quan với box phát hiện màu xanh
+- ⚙️ **Cấu hình linh hoạt** và tối ưu hiệu suất
+- � **Ngưỡng thông minh**: Chỉ gửi cảnh báo khi > 5000 pixels
 
 ## 🚀 Cài đặt
 
@@ -55,28 +56,43 @@ TELEGRAM_CHAT_ID=your_chat_id_here
 
 ### Chạy hệ thống:
 ```bash
-python main.py
+python main_with_remote.py
 ```
 
 ### Phím tắt trong giao diện:
 - **`q`**: Thoát chương trình
-- **`s`**: Chụp ảnh thủ công
-- **`r`**: Reset background (hiệu chỉnh lại phát hiện)
+- **`s`**: Chụp ảnh thủ công và gửi qua Telegram
+- **`r`**: Reset background (học lại môi trường)
+- **`m`**: Test gửi cảnh báo (giả lập phát hiện)
+
+### Điều khiển từ xa qua Telegram:
+- **`/chup`**: Chụp ảnh từ xa (không tắt chương trình)
+- **`/mo`**: Bật camera giám sát
+- **`/thoat`**: Tắt camera giám sát
+
+### Logic hoạt động:
+- **Diện tích > 5000 pixels**: Gửi cảnh báo + ảnh + ghi log
+- **Diện tích ≤ 5000 pixels**: Chỉ hiển thị thông báo, không gửi Telegram
+- **Ảnh Telegram**: Không có box xanh (nhìn rõ mặt)
+- **Ảnh trên màn hình**: Có box xanh (để debug)
 
 ## 📁 Cấu trúc dự án
 
 ```
 Intrusion_Warning/
-├── main.py                 # File chạy chính
-├── config.py              # Cấu hình hệ thống
-├── intrusion_detector.py  # Module phát hiện xâm nhập
-├── telegram_handler.py    # Module xử lý Telegram
-├── logger.py              # Module ghi log
-├── requirements.txt       # Dependencies
-├── README.md              # Hướng dẫn
-├── alert_images/          # Thư mục lưu ảnh cảnh báo
-├── intrusion_log.csv      # File log CSV
-└── system.log             # File log hệ thống
+├── main_with_remote.py    # 🚀 FILE CHÍNH - Chạy file này
+├── config.py              # ⚙️ Cấu hình hệ thống
+├── intrusion_detector.py  # 👁️ Module phát hiện xâm nhập
+├── telegram_handler.py    # 📱 Module xử lý Telegram
+├── logger.py              # 📝 Module ghi log
+├── remote_control.py      # 🎮 Module điều khiển từ xa
+├── requirements.txt       # 📦 Dependencies
+├── .env                   # 🔐 Cấu hình bảo mật (token, chat ID)
+├── .env.example           # 📋 Template cấu hình
+├── README.md              # 📖 Hướng dẫn này
+├── alert_images/          # 📷 Thư mục lưu ảnh cảnh báo
+├── intrusion_log.csv      # 📊 File log CSV (tự động tạo)
+└── test_telegram.py       # 🔧 Script test kết nối Telegram
 ```
 
 ## ⚙️ Cấu hình
@@ -95,6 +111,11 @@ CONTOUR_MIN_AREA = 500        # Diện tích tối thiểu của contour
 LOG_FILE = "intrusion_log.csv"           # File log CSV
 ALERT_IMAGES_DIR = "alert_images"        # Thư mục lưu ảnh
 ```
+
+### Điều chỉnh độ nhạy:
+- **Tăng MOTION_THRESHOLD** (5000 → 8000): Giảm cảnh báo, chỉ phát hiện chuyển động lớn
+- **Giảm MOTION_THRESHOLD** (5000 → 3000): Tăng độ nhạy, phát hiện chuyển động nhỏ hơn
+- **Tăng CONTOUR_MIN_AREA**: Lọc bỏ nhiễu nhỏ
 
 ## 📊 Log và lịch sử
 
@@ -116,16 +137,40 @@ ALERT_IMAGES_DIR = "alert_images"        # Thư mục lưu ảnh
 - Kiểm tra `CAMERA_INDEX` trong `config.py`
 - Thử các giá trị khác: 0, 1, 2...
 - Đảm bảo camera không bị ứng dụng khác sử dụng
+- Cắm sạc laptop để đảm bảo hiệu suất
 
 ### Telegram không gửi được:
-- Kiểm tra Bot Token và Chat ID
+- Chạy `python test_telegram.py` để kiểm tra kết nối
+- Kiểm tra Bot Token và Chat ID trong file `.env`
 - Đảm bảo có kết nối internet
-- Kiểm tra bot đã được start chưa
+- Kiểm tra bot đã được start chưa (gửi `/start` cho bot)
+
+### Camera bị lag:
+- Hệ thống đã tối ưu: xử lý mỗi 5 frame, 20 FPS
+- Cắm sạc laptop gaming
+- Đóng các ứng dụng khác đang chạy
+- Giảm độ sáng màn hình để tiết kiệm tài nguyên
 
 ### Phát hiện quá nhạy/không nhạy:
-- Điều chỉnh `MOTION_THRESHOLD`
-- Điều chỉnh `CONTOUR_MIN_AREA`
-- Nhấn `r` để reset background
+- Điều chỉnh `MOTION_THRESHOLD` trong `config.py`
+- Nhấn `r` để reset background khi thay đổi môi trường
+- Chuyển động > 5000 pixels mới gửi cảnh báo
+
+### Bot điều khiển từ xa không hoạt động:
+- Kiểm tra token/chat ID trong `.env`
+- Đảm bảo bot đã được start
+- Thử gửi lệnh `/chup` để test
+
+## 🔮 Tính năng đã hoàn thành
+
+- ✅ **Phát hiện chuyển động** với ngưỡng thông minh
+- ✅ **Gửi ảnh Telegram** không có box phát hiện
+- ✅ **Điều khiển từ xa** qua Telegram hoàn chỉnh
+- ✅ **Ghi log tự động** vào CSV
+- ✅ **Tối ưu hiệu suất** giảm lag camera
+- ✅ **Giao diện thân thiện** với phím tắt
+- ✅ **Reset background** thông minh
+- ✅ **Test kết nối** Telegram tích hợp
 
 ## 🔮 Mở rộng tương lai
 
@@ -133,8 +178,8 @@ ALERT_IMAGES_DIR = "alert_images"        # Thư mục lưu ảnh
 - [ ] Web interface để giám sát từ xa
 - [ ] Hỗ trợ nhiều camera
 - [ ] Cảnh báo qua email
-- [ ] Phân tích hành vi
-- [ ] Lưu trữ cloud
+- [ ] Phân tích hành vi nâng cao
+- [ ] Lưu trữ cloud (Google Drive, AWS)
 
 ## 📄 License
 
@@ -146,4 +191,12 @@ Mọi đóng góp đều được chào đón! Hãy tạo issue hoặc pull requ
 
 ---
 
-**Lưu ý**: Đây là hệ thống demo. Để sử dụng trong môi trường thực tế, cần bổ sung thêm các tính năng bảo mật và tối ưu hóa.
+## 🚀 Cách sử dụng nhanh
+
+1. **Cài đặt**: `pip install -r requirements.txt`
+2. **Cấu hình**: Copy `.env.example` → `.env` và điền token/chat ID
+3. **Chạy**: `python main_with_remote.py`
+4. **Test**: Nhấn `m` để test hoặc gửi `/chup` qua Telegram
+5. **Tùy chỉnh**: Điều chỉnh ngưỡng trong `config.py` nếu cần
+
+**Lưu ý**: Đây là hệ thống hoàn chỉnh và ổn định. File chính để chạy là `main_with_remote.py`.
