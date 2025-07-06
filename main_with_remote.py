@@ -97,56 +97,65 @@ class IntrusionSystemWithRemote:
                 
                 frame_count += 1
                 
-                # Xử lý phát hiện (mỗi 3 frame để tối ưu)
-                if frame_count % 3 == 0:
-                    # Thay vì sử dụng detector.detect_motion, chỉ lấy frame để đơn giản hóa
-                    motion_detected, area = False, 0
+                # Xử lý phát hiện (mỗi 5 frame để giảm lag)
+                if frame_count % 5 == 0:
+                    # Tạo bản copy để phát hiện (không có box)
+                    detection_frame = frame.copy()
+                    motion_detected, area = self.detector.detect_motion(detection_frame, draw_boxes=False)
                     
-                    # Giả lập phát hiện chuyển động nếu nhấn phím 'm'
-                    key = cv2.waitKey(1) & 0xFF
-                    if key == ord('m'):
-                        motion_detected, area = True, 8000
-                        print("🧪 Test: Giả lập phát hiện chuyển động")
-                    
-                    if motion_detected:
-                        area = 8000  # Giả lập diện tích chuyển động
+                    if motion_detected and area > 5000:  # Chỉ gửi cảnh báo nếu > 5000 pixels
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         
-                        print(f"🚨 Phát hiện chuyển động! Diện tích: {area:.1f}")
+                        print(f"🚨 Phát hiện xâm nhập! Diện tích: {area:.1f} pixels")
                           
                         # Gửi cảnh báo Telegram
                         message = f"🚨 CẢNH BÁO XÂM NHẬP!\n📅 Thời gian: {timestamp}\n📏 Diện tích: {area:.1f} pixels"
                         
+                        # Lưu ảnh GỐCKCK (không có box xanh) để gửi Telegram
+                        filename_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                        filename = f"alert_{filename_timestamp}.jpg"
+                        filepath = f"alert_images/{filename}"
+                        cv2.imwrite(filepath, frame)  # Lưu frame gốc, không có box
+                        print(f"💾 Đã lưu ảnh: {filepath}")
+                        
+                        # Gửi tin nhắn và ảnh
                         if self.telegram.send_message(message):
-                            # Gửi ảnh cảnh báo
-                            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                            filename = f"alert_{timestamp}.jpg"
-                            filepath = f"alert_images/{filename}"
-                            cv2.imwrite(filepath, frame)
-                            self.telegram.send_photo(filepath)
+                            print("✅ Đã gửi cảnh báo Telegram")
+                            if self.telegram.send_photo(filepath, "🚨 Ảnh cảnh báo xâm nhập"):
+                                print("✅ Đã gửi ảnh qua Telegram")
+                            else:
+                                print("❌ Lỗi gửi ảnh qua Telegram")
+                        else:
+                            print("❌ Lỗi gửi tin nhắn Telegram")
                         
                         # Ghi log
-                        print(f"📝 Ghi log: Phát hiện chuyển động (Diện tích: {area})")
+                        try:
+                            self.logger.log_intrusion(timestamp, area, filename)
+                            print(f"📝 Đã ghi log: {timestamp} - Diện tích: {area:.1f}")
+                        except Exception as e:
+                            print(f"❌ Lỗi ghi log: {e}")
+                    elif motion_detected:
+                        # Hiển thị thông tin nhưng không gửi cảnh báo
+                        print(f"👁️ Phát hiện chuyển động nhỏ: {area:.1f} pixels (< 5000, không gửi cảnh báo)")
                 
-                # Hiển thị frame với overlay đơn giản
-                display_frame = frame.copy()
-                
-                # Thêm thông tin trạng thái
-                status_text = "🔴 ĐANG GIÁM SÁT" if self.running else "⭕ DỪNG"
-                cv2.putText(display_frame, status_text, (10, 30), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                
-                # Thêm thông tin remote control
-                remote_text = "📱 Remote: /chup /mo /thoat"
-                cv2.putText(display_frame, remote_text, (10, 60), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 1)
-                
-                # Thêm hướng dẫn
-                help_text = "Nhan [m] de test chuyen dong"
-                cv2.putText(display_frame, help_text, (10, 90), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                
-                cv2.imshow("🏠 Intrusion Warning System", display_frame)
+                # Hiển thị frame với overlay và box phát hiện (mỗi 5 frame để giảm lag)
+                if frame_count % 5 == 0:
+                    display_frame = frame.copy()
+                    
+                    # Chạy detect với box để hiển thị trên màn hình
+                    self.detector.detect_motion(display_frame, draw_boxes=True)
+                    
+                    # Thêm thông tin trạng thái
+                    status_text = "GIAM SAT" if self.running else "DUNG"
+                    cv2.putText(display_frame, status_text, (10, 30), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    
+                    # Thêm ngưỡng phát hiện
+                    threshold_text = "Nguong: >5000px"
+                    cv2.putText(display_frame, threshold_text, (10, 60), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+                    
+                    cv2.imshow("Intrusion Warning", display_frame)
                 
                 # Xử lý phím
                 key = cv2.waitKey(1) & 0xFF
@@ -160,15 +169,45 @@ class IntrusionSystemWithRemote:
                     filepath = f"alert_images/{filename}"
                     cv2.imwrite(filepath, frame)
                     print(f"📸 Đã chụp ảnh: {filepath}")
-                    self.telegram.send_photo(filepath, "📸 Ảnh chụp thủ công")
+                    if self.telegram.send_photo(filepath, "📸 Ảnh chụp thủ công"):
+                        print("✅ Đã gửi ảnh thủ công qua Telegram")
+                    else:
+                        print("❌ Lỗi gửi ảnh thủ công")
                 elif key == ord('r'):
                     # Reset ảnh nền
+                    self.detector.reset_background()
                     print("🔄 Đã reset ảnh nền")
                 elif key == ord('m'):
-                    # Test motion được xử lý ở trên
-                    pass
+                    # Test phát hiện chuyển động thủ công
+                    print("🧪 TEST: Giả lập phát hiện chuyển động")
+                    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    test_area = 8500.0
+                    
+                    # Lưu ảnh test
+                    filename_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"test_{filename_timestamp}.jpg"
+                    filepath = f"alert_images/{filename}"
+                    cv2.imwrite(filepath, frame)
+                    
+                    # Gửi cảnh báo test
+                    message = f"🧪 TEST CẢNH BÁO!\n📅 Thời gian: {timestamp}\n📏 Diện tích: {test_area} pixels"
+                    if self.telegram.send_message(message):
+                        print("✅ Đã gửi tin nhắn test")
+                        if self.telegram.send_photo(filepath, "🧪 Ảnh test cảnh báo"):
+                            print("✅ Đã gửi ảnh test")
+                        else:
+                            print("❌ Lỗi gửi ảnh test")
+                    else:
+                        print("❌ Lỗi gửi tin nhắn test")
+                    
+                    # Ghi log test
+                    try:
+                        self.logger.log_intrusion(timestamp, test_area, filename)
+                        print(f"📝 Đã ghi log test: {timestamp}")
+                    except Exception as e:
+                        print(f"❌ Lỗi ghi log test: {e}")
                 
-                time.sleep(0.03)  # ~30 FPS
+                time.sleep(0.05)  # ~20 FPS (giảm từ 30 FPS để tiết kiệm tài nguyên)
                 
         except KeyboardInterrupt:
             print("\n⚠️ Nhận Ctrl+C, đang thoát...")

@@ -58,15 +58,19 @@ class IntrusionDetector:
             self.yolo_net = None
             print("YOLO không khả dụng, sử dụng motion detection đơn giản")
     
-    def detect_motion(self, frame):
-        """Phát hiện chuyển động trong frame"""
+    def detect_motion(self, frame, draw_boxes=False):
+        """Phát hiện chuyển động trong frame
+        Args:
+            frame: Frame để phân tích
+            draw_boxes: True để vẽ box phát hiện (cho hiển thị), False để không vẽ (cho Telegram)
+        """
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
         
         # Khởi tạo background nếu chưa có
         if self.background is None:
             self.background = gray
-            return False, None
+            return False, 0
         
         # Tính toán sự khác biệt
         frame_delta = cv2.absdiff(self.background, gray)
@@ -87,9 +91,10 @@ class IntrusionDetector:
             motion_detected = True
             motion_area += area
             
-            # Vẽ bounding box
-            (x, y, w, h) = cv2.boundingRect(contour)
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # Chỉ vẽ bounding box nếu được yêu cầu (cho hiển thị trên màn hình)
+            if draw_boxes:
+                (x, y, w, h) = cv2.boundingRect(contour)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         
         # Cập nhật background
         self.background = cv2.addWeighted(self.background, 0.95, gray, 0.05, 0)
@@ -170,13 +175,17 @@ class IntrusionDetector:
                     print(f"Đã lưu ảnh thủ công: {manual_image}")
                 elif key == ord('r'):
                     # Reset background
-                    self.background = None
-                    print("Đã reset background")
+                    self.reset_background()
                     
         except KeyboardInterrupt:
             print("\n🛑 Dừng hệ thống giám sát")
         finally:
             self.cleanup()
+    
+    def reset_background(self):
+        """Reset ảnh nền để học lại môi trường"""
+        self.background = None
+        print("🔄 Đã reset ảnh nền - hệ thống sẽ học lại môi trường")
     
     def cleanup(self):
         """Dọn dẹp tài nguyên"""
