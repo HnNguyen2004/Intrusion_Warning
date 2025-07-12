@@ -33,8 +33,10 @@ Intrusion_Warning/
 │
 ├── 📖 DOCUMENTATION
 │   ├── README.md                     # 📖 Hướng dẫn chính
-│   └── docs/                         # 📚 Thư mục tài liệu chi tiết
+│   └── how_it_works/                 # 📚 Thư mục tài liệu chi tiết
+│       ├── HOW_IT_WORKS.md           # 🔬 Giải thích thuật toán phát hiện
 │       ├── HUONG_DAN_CHI_TIET.md     # 🇻🇳 Hướng dẫn tiếng Việt
+│       ├── PROJECT_STRUCTURE.md      # 📁 Cấu trúc dự án này
 │       ├── SETUP.md                  # 🔧 Hướng dẫn cài đặt
 │       ├── REMOTE_GUIDE.md           # 📱 Hướng dẫn điều khiển từ xa
 │       ├── WEB_GUIDE.md              # 🌐 Hướng dẫn web system

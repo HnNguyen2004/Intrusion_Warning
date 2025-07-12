@@ -10,7 +10,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Camera Configuration
 CAMERA_INDEX = 0  # 0 for default camera
-MOTION_THRESHOLD = 5000  # Threshold for motion detection
+MOTION_THRESHOLD = 21000  # Threshold for motion detection
 CONTOUR_MIN_AREA = 500   # Minimum area for valid contour
 
 # File paths
