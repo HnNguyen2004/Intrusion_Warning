@@ -6,6 +6,8 @@ Thư mục này chứa toàn bộ tài liệu giải thích, hướng dẫn và 
 
 ### 🔬 **Hiểu Hệ Thống**
 - **[HOW_IT_WORKS.md](HOW_IT_WORKS.md)** - Giải thích chi tiết thuật toán phát hiện chuyển động, cách tính pixel, ví dụ thực tế
+- **[REAL_TIME_CONTROL.md](REAL_TIME_CONTROL.md)** - Giao diện điều khiển ngưỡng real-time, progress bar, thông tin chi tiết
+- **[FPS_OPTIMIZATION.md](FPS_OPTIMIZATION.md)** - Tối ưu hiệu suất, FPS cao, mượt mà cho demo
 - **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Cấu trúc dự án, vai trò từng file
 
 ### 🛠️ **Cài Đặt & Cấu Hình**  
@@ -25,8 +27,9 @@ Thư mục này chứa toàn bộ tài liệu giải thích, hướng dẫn và 
 
 1. **Đọc trước**: [SETUP.md](SETUP.md) - Cài đặt hệ thống
 2. **Hiểu cách hoạt động**: [HOW_IT_WORKS.md](HOW_IT_WORKS.md) - Thuật toán phát hiện
-3. **Sử dụng từ xa**: [REMOTE_GUIDE.md](REMOTE_GUIDE.md) - Điều khiển qua Telegram
-4. **Web dashboard**: [WEB_GUIDE.md](WEB_GUIDE.md) - Quản lý qua web
+3. **Điều khiển real-time**: [REAL_TIME_CONTROL.md](REAL_TIME_CONTROL.md) - Giao diện người dùng
+4. **Sử dụng từ xa**: [REMOTE_GUIDE.md](REMOTE_GUIDE.md) - Điều khiển qua Telegram
+5. **Web dashboard**: [WEB_GUIDE.md](WEB_GUIDE.md) - Quản lý qua web
 
 ## 💡 **Tips Đọc Tài Liệu**
 

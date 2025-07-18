@@ -31,17 +31,21 @@ class IntrusionDetector:
         self.init_person_detection()
     
     def init_camera(self):
-        """Khởi tạo camera"""
+        """Khởi tạo camera với tối ưu FPS"""
         try:
             self.cap = cv2.VideoCapture(CAMERA_INDEX)
             if not self.cap.isOpened():
                 raise Exception("Không thể mở camera")
             
-            # Thiết lập độ phân giải
+            # Thiết lập độ phân giải tối ưu cho FPS
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             
-            print("Camera đã được khởi tạo thành công")
+            # Tối ưu FPS
+            self.cap.set(cv2.CAP_PROP_FPS, 30)
+            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Giảm buffer để giảm lag
+            
+            print("Camera đã được khởi tạo thành công với tối ưu FPS")
             
         except Exception as e:
             print(f"Lỗi khởi tạo camera: {e}")
@@ -59,13 +63,17 @@ class IntrusionDetector:
             print("YOLO không khả dụng, sử dụng motion detection đơn giản")
     
     def detect_motion(self, frame, draw_boxes=False):
-        """Phát hiện chuyển động trong frame
+        """Phát hiện chuyển động trong frame - OPTIMIZED
         Args:
             frame: Frame để phân tích
             draw_boxes: True để vẽ box phát hiện (cho hiển thị), False để không vẽ (cho Telegram)
         """
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (21, 21), 0)
+        # Tối ưu: Resize frame nhỏ hơn để xử lý nhanh hơn
+        original_shape = frame.shape
+        small_frame = cv2.resize(frame, (320, 240))  # Giảm kích thước 50%
+        
+        gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (11, 11), 0)  # Giảm kernel size từ 21 xuống 11
         
         # Khởi tạo background nếu chưa có
         if self.background is None:
@@ -75,7 +83,7 @@ class IntrusionDetector:
         # Tính toán sự khác biệt
         frame_delta = cv2.absdiff(self.background, gray)
         thresh = cv2.threshold(frame_delta, 30, 255, cv2.THRESH_BINARY)[1]
-        thresh = cv2.dilate(thresh, None, iterations=2)
+        thresh = cv2.dilate(thresh, None, iterations=1)  # Giảm iterations từ 2 xuống 1
         
         # Tìm contours
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -83,21 +91,32 @@ class IntrusionDetector:
         motion_detected = False
         motion_area = 0
         
+        # Scale factor để convert từ small frame về original
+        scale_x = original_shape[1] / 320
+        scale_y = original_shape[0] / 240
+        
         for contour in contours:
             area = cv2.contourArea(contour)
-            if area < CONTOUR_MIN_AREA:
+            # Điều chỉnh CONTOUR_MIN_AREA cho frame nhỏ hơn
+            if area < (CONTOUR_MIN_AREA / 4):  # Chia 4 vì diện tích giảm theo bình phương
                 continue
                 
             motion_detected = True
-            motion_area += area
+            # Scale area lên để match với frame gốc
+            motion_area += area * scale_x * scale_y
             
             # Chỉ vẽ bounding box nếu được yêu cầu (cho hiển thị trên màn hình)
             if draw_boxes:
                 (x, y, w, h) = cv2.boundingRect(contour)
+                # Scale coordinates lên frame gốc
+                x = int(x * scale_x)
+                y = int(y * scale_y)
+                w = int(w * scale_x)
+                h = int(h * scale_y)
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
         
-        # Cập nhật background
-        self.background = cv2.addWeighted(self.background, 0.95, gray, 0.05, 0)
+        # Cập nhật background với tần suất thấp hơn
+        self.background = cv2.addWeighted(self.background, 0.98, gray, 0.02, 0)  # Giảm từ 0.95/0.05
         
         return motion_detected and motion_area > MOTION_THRESHOLD, motion_area
     
