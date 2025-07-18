@@ -23,6 +23,10 @@ build/
 system.log
 debug.log
 
+# CSV logs (chứa dữ liệu phát hiện)
+intrusion_log.csv
+*.csv
+
 # Alert images (có thể chứa ảnh riêng tư)
 alert_images/*.jpg
 alert_images/*.png
@@ -32,9 +36,13 @@ alert_images/*.tiff
 # Giữ lại .gitkeep để maintain folder structure
 !alert_images/.gitkeep
 
-# CSV logs (chứa dữ liệu phát hiện)
-intrusion_log.csv
-*.csv
+# Demo và test files (để tránh commit nhầm)
+demo*.py
+test*.py
+get_chat_id.py
+
+# Workspace cleanup file (chỉ local)
+CLEAN_WORKSPACE.md
 
 # IDE và Editor files
 .vscode/
