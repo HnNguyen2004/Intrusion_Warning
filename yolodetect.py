@@ -107,14 +107,14 @@ class YoloDetect():
                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
         # Kiểm tra nhiều điểm trong bounding box thay vì chỉ centroid
-        is_inside = self.check_multiple_points_in_box(x, y, x_plus_w, y_plus_h, points, centroid)
+        is_inside = self.check_multiple_points_in_box(img, x, y, x_plus_w, y_plus_h, points, centroid)
         
         if is_inside:
             img = self.alert(img)
 
         return is_inside
 
-    def check_multiple_points_in_box(self, x, y, x_plus_w, y_plus_h, points, centroid):
+    def check_multiple_points_in_box(self, img, x, y, x_plus_w, y_plus_h, points, centroid):
         """Kiểm tra nhiều điểm trong bounding box để tăng độ tin cậy"""
         polygon = Polygon(points)
         
