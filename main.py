@@ -13,7 +13,7 @@ class IntrusionDetectionSystem:
         self.model = YoloDetect()
         self.detect = False
 
-        # Thêm database manager
+        # Database manager
         self.db_manager = DatabaseManager()
         self.db_connected = False
         
@@ -28,7 +28,14 @@ class IntrusionDetectionSystem:
         self.detection_cooldown = 5  # 5 giây giữa các lần lưu
         
         # Đặt callback cho YoloDetect
-        self.model.set_intrusion_callback(self.on_intrusion_detected)
+        try:
+            if hasattr(self.model, 'set_intrusion_callback'):
+                self.model.set_intrusion_callback(self.on_intrusion_detected)
+                print("✓ Intrusion callback set successfully")
+            else:
+                print("⚠️ YoloDetect doesn't support callback")
+        except Exception as e:
+            print(f"⚠️ Error setting callback: {e}")
 
     def handle_left_click(self, event, x, y, flags, points):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -46,9 +53,7 @@ class IntrusionDetectionSystem:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"intrusion_{person_name}_{timestamp}.jpg"
         
-        # Tạo thư mục nếu chưa có
         os.makedirs("intrusion_images", exist_ok=True)
-        
         image_path = os.path.join("intrusion_images", filename)
         cv2.imwrite(image_path, frame)
         
@@ -70,7 +75,7 @@ class IntrusionDetectionSystem:
                     confidence=confidence,
                     image_path=image_path,
                     location=location,
-                    telegram_sent=False,
+                    telegram_sent=True,  # Telegram đã được gửi trong yolodetect.py
                     notes=f"Detected via {location}"
                 )
                 print(f"✓ Intrusion logged to database with ID: {log_id}")
@@ -80,15 +85,6 @@ class IntrusionDetectionSystem:
         except Exception as e:
             print(f"✗ Error logging intrusion: {e}")
             return None, image_path
-    
-    def update_telegram_status_in_db(self, log_id, success=True):
-        """Cập nhật trạng thái gửi telegram trong database"""
-        if self.db_connected and log_id:
-            try:
-                self.db_manager.update_telegram_status(log_id, success)
-                print(f"✓ Telegram status updated for log ID: {log_id}")
-            except Exception as e:
-                print(f"✗ Error updating telegram status: {e}")
 
     def on_intrusion_detected(self, frame, person_name="Person_Detected", confidence=0.8):
         """Callback được gọi khi YoloDetect phát hiện xâm nhập"""
@@ -108,10 +104,6 @@ class IntrusionDetectionSystem:
             
             # Cập nhật thời gian detection
             self.last_detection_time = current_time
-            
-            # Cập nhật trạng thái telegram (giả sử telegram đã được gửi thành công trong yolodetect.py)
-            if log_id:
-                self.update_telegram_status_in_db(log_id, True)
 
     def run(self):
         cv2.namedWindow("Intrusion Warning")
@@ -124,7 +116,6 @@ class IntrusionDetectionSystem:
             frame = self.draw_polygon(frame, self.points)
 
             if self.detect:
-                # Detect với YOLO (callback sẽ được gọi tự động từ yolodetect.py)
                 frame = self.model.detect(frame=frame, points=self.points)
 
             cv2.imshow("Intrusion Warning", frame)
@@ -142,7 +133,6 @@ class IntrusionDetectionSystem:
         self.video.stop()
         cv2.destroyAllWindows()
         
-        # Đóng kết nối database
         if self.db_connected:
             self.db_manager.disconnect()
             print("✓ Database connection closed")

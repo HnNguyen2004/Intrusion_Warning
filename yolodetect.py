@@ -49,6 +49,13 @@ class YoloDetect():
         self.previous_detections = []
         self.tracking_threshold = 0.6  # Threshold cho tracking
 
+        # Callback để thông báo phát hiện xâm nhập
+        self.intrusion_callback = None
+
+    def set_intrusion_callback(self, callback):
+        """Đặt callback function khi phát hiện xâm nhập"""
+        self.intrusion_callback = callback
+
     def read_class_file(self):
         with open(self.classnames_file, 'r') as f:
             self.classes = [line.strip() for line in f.readlines()]
@@ -116,32 +123,48 @@ class YoloDetect():
 
     def check_multiple_points_in_box(self, img, x, y, x_plus_w, y_plus_h, points, centroid):
         """Kiểm tra nhiều điểm trong bounding box để tăng độ tin cậy"""
-        polygon = Polygon(points)
-        
-        # Kiểm tra centroid chính
-        if polygon.contains(Point(centroid)):
-            return True
-        
-        # Kiểm tra các điểm khác trong bounding box
-        check_points = [
-            centroid,  # Centroid chính
-            (x + 10, y + 10),  # Góc trên trái
-            (x_plus_w - 10, y + 10),  # Góc trên phải
-            (x + 10, y_plus_h - 10),  # Góc dưới trái
-            (x_plus_w - 10, y_plus_h - 10),  # Góc dưới phải
-            ((x + x_plus_w) // 2, y + 10),  # Điểm giữa cạnh trên
-            ((x + x_plus_w) // 2, y_plus_h - 10),  # Điểm giữa cạnh dưới
-        ]
-        
-        inside_count = 0
-        for point in check_points:
-            if polygon.contains(Point(point)):
-                inside_count += 1
-                # Vẽ điểm được kiểm tra
-                cv2.circle(img, point, 3, (0, 255, 255), -1)  # Màu vàng
-        
-        # Nếu có ít nhất 2 điểm trong polygon thì coi như detect được
-        return inside_count >= 2
+        # Kiểm tra points có đủ để tạo polygon không
+        if len(points) < 3:
+            return False
+            
+        try:
+            polygon = Polygon(points)
+            
+            # Kiểm tra polygon hợp lệ
+            if not polygon.is_valid:
+                return False
+                
+            # Kiểm tra centroid chính
+            if polygon.contains(Point(centroid)):
+                return True
+            
+            # Kiểm tra các điểm khác trong bounding box
+            check_points = [
+                centroid,  # Centroid chính
+                (x + 10, y + 10),  # Góc trên trái
+                (x_plus_w - 10, y + 10),  # Góc trên phải
+                (x + 10, y_plus_h - 10),  # Góc dưới trái
+                (x_plus_w - 10, y_plus_h - 10),  # Góc dưới phải
+                ((x + x_plus_w) // 2, y + 10),  # Điểm giữa cạnh trên
+                ((x + x_plus_w) // 2, y_plus_h - 10),  # Điểm giữa cạnh dưới
+            ]
+            
+            inside_count = 0
+            for point in check_points:
+                try:
+                    if polygon.contains(Point(point)):
+                        inside_count += 1
+                        # Vẽ điểm được kiểm tra
+                        cv2.circle(img, point, 3, (0, 255, 255), -1)  # Màu vàng
+                except Exception:
+                    continue
+            
+            # Nếu có ít nhất 2 điểm trong polygon thì coi như detect được
+            return inside_count >= 2
+            
+        except Exception as e:
+            print(f"Error in polygon check: {e}")
+            return False
 
     def alert(self, img):
         cv2.putText(img, "ALARM!!!!", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
@@ -187,15 +210,23 @@ class YoloDetect():
 
         indices = cv2.dnn.NMSBoxes(boxes, confidences, self.conf_threshold, self.nms_threshold)
 
-        for i in indices:
-            box = boxes[i]
-            x = int(box[0])  # Chuyển thành int ngay từ đầu
-            y = int(box[1])
-            w = int(box[2])
-            h = int(box[3])
-            x_plus_w = x + w
-            y_plus_h = y + h
-            confidence = confidences[i]
-            self.draw_prediction(frame, class_ids[i], x, y, x_plus_w, y_plus_h, points, confidence)
+        # Sửa lỗi: kiểm tra indices không rỗng
+        if len(indices) > 0:
+            for i in indices.flatten():  # Thêm flatten() để xử lý array 2D
+                box = boxes[i]
+                x = int(box[0])  # Chuyển thành int ngay từ đầu
+                y = int(box[1])
+                w = int(box[2])
+                h = int(box[3])
+                x_plus_w = x + w
+                y_plus_h = y + h
+                confidence = confidences[i]
+                is_inside = self.draw_prediction(frame, class_ids[i], x, y, x_plus_w, y_plus_h, points, confidence)
+                
+                # Khi phát hiện person trong polygon
+                if is_inside:
+                    # Gọi callback để lưu database
+                    if self.intrusion_callback:
+                        self.intrusion_callback(frame, "Person_Detected", confidence)
 
         return frame
