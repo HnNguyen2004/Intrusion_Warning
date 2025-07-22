@@ -48,13 +48,6 @@ class YoloDetect():
         # Thêm tracking để cải thiện độ ổn định
         self.previous_detections = []
         self.tracking_threshold = 0.6  # Threshold cho tracking
-        
-        # Callback để thông báo phát hiện xâm nhập
-        self.intrusion_callback = None
-
-    def set_intrusion_callback(self, callback):
-        """Đặt callback function khi phát hiện xâm nhập"""
-        self.intrusion_callback = callback
 
     def read_class_file(self):
         with open(self.classnames_file, 'r') as f:
@@ -203,12 +196,6 @@ class YoloDetect():
             x_plus_w = x + w
             y_plus_h = y + h
             confidence = confidences[i]
-            is_inside = self.draw_prediction(frame, class_ids[i], x, y, x_plus_w, y_plus_h, points, confidence)
-            
-            # Khi phát hiện person trong polygon
-            if is_inside:
-                # Gọi callback để lưu database
-                if self.intrusion_callback:
-                    self.intrusion_callback(frame, "Person_Detected", confidence)
+            self.draw_prediction(frame, class_ids[i], x, y, x_plus_w, y_plus_h, points, confidence)
 
         return frame

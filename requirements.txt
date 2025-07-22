@@ -3,3 +3,6 @@ numpy
 imutils
 python-telegram-bot
 psycopg2-binary==2.9.7
+shapely
+python-dotenv
+face-recognition
